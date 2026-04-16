@@ -12,11 +12,14 @@ const app = express();
 // CORS configuration - allow all frontend ports
 app.use(cors({
   origin: [
-    'http://localhost:3000',  // Portfolio Home
-    'http://localhost:3001',  // Admin Panel
-    'http://localhost:5173',  // 3D Portfolio
+    // Local development
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
+    // Production - all vercel apps allowed
+    /\.vercel\.app$/,
   ],
   credentials: true
 }));
