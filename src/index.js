@@ -10,15 +10,16 @@ import adminRoutes from "./routes/admin.js";
 const app = express();
 
 // CORS configuration - allow all origins
-app.use(cors({
-  origin: true,
+const corsOptions = {
+  origin: (_origin, callback) => callback(null, true),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
+app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors());
+// Handle preflight requests with same options
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
