@@ -2,24 +2,21 @@ import "./env.js";
 
 import express from "express";
 import mongoose from "mongoose";
-import cors from "cors";
 import rateLimit from "express-rate-limit";
 import portfolioRoutes from "./routes/portfolio.js";
 import adminRoutes from "./routes/admin.js";
 
 const app = express();
 
-// CORS configuration - allow all origins
-const corsOptions = {
-  origin: (_origin, callback) => callback(null, true),
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
-app.use(cors(corsOptions));
-
-// Handle preflight requests with same options
-app.options('*', cors(corsOptions));
+// CORS — manually set headers so Vercel proxy stripping Origin doesn't break it
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
 
 app.use(express.json());
 
