@@ -1,3 +1,13 @@
 {
-  "version": 2
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/portfolio/submit", "destination": "/api/portfolio/submit" },
+    { "source": "/api/portfolio/check-slug/:slug", "destination": "/api/portfolio/check-slug/[slug]" },
+    { "source": "/api/portfolio/edit/:token", "destination": "/api/portfolio/edit/[token]" },
+    { "source": "/api/portfolio/:slug", "destination": "/api/portfolio/[slug]" },
+    { "source": "/api/admin/login", "destination": "/api/admin/login" },
+    { "source": "/api/admin/stats", "destination": "/api/admin/stats" },
+    { "source": "/api/admin/portfolios", "destination": "/api/admin/portfolios" },
+    { "source": "/api/admin/portfolios/:id", "destination": "/api/admin/portfolios/[id]" }
+  ]
 }
