@@ -13,7 +13,7 @@ function auth(req) {
 }
 
 export default async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === "OPTIONS") return res.status(200).end();
 
   if (!auth(req)) return res.status(401).json({ error: "Unauthorized" });

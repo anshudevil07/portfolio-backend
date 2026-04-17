@@ -3,7 +3,7 @@ import { setCors } from "../../../lib/cors.js";
 import Portfolio from "../../../src/models/Portfolio.js";
 
 export default async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const { token } = req.query;
