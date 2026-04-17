@@ -1,29 +1,11 @@
 import "../src/env.js";
 import express from "express";
 import mongoose from "mongoose";
-import cors from "cors";
 import portfolioRoutes from "../src/routes/portfolio.js";
 import adminRoutes from "../src/routes/admin.js";
 import rateLimit from "express-rate-limit";
 
 const app = express();
-
-// ✅ Run middleware helper for Vercel
-function runMiddleware(req, res, fn) {
-  return new Promise((resolve, reject) => {
-    fn(req, res, (result) => {
-      if (result instanceof Error) return reject(result);
-      return resolve(result);
-    });
-  });
-}
-
-const corsMiddleware = cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-});
-
 app.use(express.json());
 
 const submitLimiter = rateLimit({
@@ -57,22 +39,23 @@ async function connectDB() {
 
 // ✅ Vercel serverless handler
 export default async function handler(req, res) {
-  // CORS headers FIRST - before anything
+  // ✅ CORS HEADERS FIRST - before EVERYTHING
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
 
-  // ✅ Handle preflight immediately
+  // ✅ Handle preflight IMMEDIATELY - don't touch Express
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // Run CORS middleware
-  await runMiddleware(req, res, corsMiddleware);
-
-  // Connect DB
-  await connectDB();
-
-  // Pass to Express
-  return app(req, res);
+  try {
+    // Connect DB
+    await connectDB();
+    // Pass to Express AFTER headers are set
+    return app(req, res);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
+  }
 }
