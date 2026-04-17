@@ -11,21 +11,7 @@ const app = express();
 
 // CORS configuration - allow all frontend ports
 app.use(cors({
-  origin: [
-    // Local development
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-    // Production - all vercel apps allowed
-    /\.vercel\.app$/,
-    // Specific production URLs
-    'https://portfolio-home-delta-eight.vercel.app',
-    'https://portfolio-home-th9npwogf-anshudevil07s-projects.vercel.app',
-    'https://3d-portfolio-b835b6nde-anshudevil07s-projects.vercel.app',
-    'https://portfolio-admin-rid51kwda-anshudevil07s-projects.vercel.app',
-  ],
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
