@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" }
+  ],
   "rewrites": [
     { "source": "/api/portfolio/submit", "destination": "/api/portfolio/submit" },
     { "source": "/api/portfolio/check-slug/:slug", "destination": "/api/portfolio/check-slug/[slug]" },
