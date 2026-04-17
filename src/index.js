@@ -20,8 +20,15 @@ app.use(cors({
     'http://localhost:5175',
     // Production - all vercel apps allowed
     /\.vercel\.app$/,
+    // Specific production URLs
+    'https://portfolio-home-delta-eight.vercel.app',
+    'https://portfolio-home-th9npwogf-anshudevil07s-projects.vercel.app',
+    'https://3d-portfolio-b835b6nde-anshudevil07s-projects.vercel.app',
+    'https://portfolio-admin-rid51kwda-anshudevil07s-projects.vercel.app',
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
@@ -53,8 +60,12 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("✓ MongoDB connected");
-    app.listen(process.env.PORT || 5000, () =>
-      console.log(`✓ Server running on port ${process.env.PORT || 5000}`)
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      app.listen(process.env.PORT || 5000, () =>
+        console.log(`✓ Server running on port ${process.env.PORT || 5000}`)
+      );
+    }
   })
   .catch((err) => console.error("DB connection error:", err));
+
+export default app;
