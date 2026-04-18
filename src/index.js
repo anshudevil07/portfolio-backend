@@ -43,16 +43,38 @@ app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/admin", adminRoutes);
 app.get("/", (_, res) => res.json({ status: "Portfolio API running ✓" }));
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log("✓ MongoDB connected");
-    if (process.env.NODE_ENV !== 'production') {
-      app.listen(process.env.PORT || 5000, () =>
-        console.log(`✓ Server running on port ${process.env.PORT || 5000}`)
-      );
-    }
-  })
-  .catch((err) => console.error("DB connection error:", err));
+// Serverless-safe MongoDB connection with caching
+let isConnected = false;
+
+async function connectDB() {
+  if (isConnected && mongoose.connection.readyState === 1) return;
+  await mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 30000,
+    maxPoolSize: 10,
+    bufferCommands: false,
+  });
+  isConnected = true;
+  console.log("✓ MongoDB connected");
+}
+
+// Connect immediately on module load
+connectDB().catch((err) => console.error("DB connection error:", err));
+
+// Re-connect middleware — ensures connection is alive before each request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(503).json({ error: "Database unavailable. Please try again." });
+  }
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(process.env.PORT || 5000, () =>
+    console.log(`✓ Server running on port ${process.env.PORT || 5000}`)
+  );
+}
 
 export default app;
