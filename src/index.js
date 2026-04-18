@@ -8,7 +8,32 @@ import adminRoutes from "./routes/admin.js";
 
 const app = express();
 
-// CORS — manually set headers so Vercel proxy stripping Origin doesn't break it
+// ── Serverless-safe MongoDB connection ──────────────────────────────
+// Cache the connection promise so concurrent cold-start requests
+// all wait on the same connect() call instead of opening many connections.
+let connectionPromise = null;
+
+function connectDB() {
+  if (mongoose.connection.readyState === 1) return Promise.resolve();
+  if (!connectionPromise) {
+    connectionPromise = mongoose
+      .connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 15000,
+        socketTimeoutMS: 30000,
+        maxPoolSize: 10,
+      })
+      .then(() => {
+        console.log("✓ MongoDB connected");
+      })
+      .catch((err) => {
+        connectionPromise = null; // allow retry on next request
+        throw err;
+      });
+  }
+  return connectionPromise;
+}
+
+// CORS
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
   res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -20,7 +45,18 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// Rate limiting — 10 submissions per IP per hour
+// Ensure DB is connected before any route runs
+app.use(async (_req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB connection error:", err.message);
+    res.status(503).json({ error: "Database unavailable. Please try again." });
+  }
+});
+
+// Rate limiting
 const submitLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
@@ -29,7 +65,6 @@ const submitLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// General API limiter — 200 requests per 15 min
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -43,35 +78,7 @@ app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/admin", adminRoutes);
 app.get("/", (_, res) => res.json({ status: "Portfolio API running ✓" }));
 
-// Serverless-safe MongoDB connection with caching
-let isConnected = false;
-
-async function connectDB() {
-  if (isConnected && mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 10000,
-    socketTimeoutMS: 30000,
-    maxPoolSize: 10,
-    bufferCommands: false,
-  });
-  isConnected = true;
-  console.log("✓ MongoDB connected");
-}
-
-// Connect immediately on module load
-connectDB().catch((err) => console.error("DB connection error:", err));
-
-// Re-connect middleware — ensures connection is alive before each request
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    res.status(503).json({ error: "Database unavailable. Please try again." });
-  }
-});
-
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   app.listen(process.env.PORT || 5000, () =>
     console.log(`✓ Server running on port ${process.env.PORT || 5000}`)
   );
